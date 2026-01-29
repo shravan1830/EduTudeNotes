@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes.css') }}">
+
+    <title>Notes</title>
+    
+</head>
+<body>
+    <br>
+    <br>
+    <a href="\view-summarizations" class="btn btn-secondary mt-3">Back to Summary</a>
+    <h1 class="mt-5">Generated Notes</h1>
+    <textarea id="notesContent" readonly rows="20" cols="80"></textarea>  <!-- Use a textarea for notes -->
+    <br>
+    <br>
+    <button id="downloadBtn">Download Notes</button>
+    
+
+
+
+    <script>
+        // Retrieve the notes from localStorage and display them
+        document.addEventListener("DOMContentLoaded", function() {
+            const notes = localStorage.getItem("generatedNotes");
+            const notesContentDiv = document.getElementById("notesContent");
+            if (notes) {
+                notesContentDiv.value = notes; // Display the generated notes
+            } else {
+                notesContentDiv.value = "No notes available."; // Handle case where there are no notes
+            }
+        });
+
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                const summaryText = document.getElementById('notesContent').innerText;
+                const blob = new Blob([summaryText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'notes.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+    </script>
+</body>
+</html>

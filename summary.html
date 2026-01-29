@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EduTubeNotes - Summary</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/summary.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+        {% if summary %}
+            <h2 class="mt-5">Your Summary</h2>
+            <div class="card mt-4">
+                <div class="card-body" id="summary">
+                    <pre>{{ summary|safe }}</pre>
+                </div>
+            </div>
+            <button id="downloadBtn">Download Summary</button>
+            <button id="notesBtn" onclick="generateNotes()">Generate Notes</button>
+        {% elif error %}
+        <div class="alert alert-danger mt-5">{{ error }}</div>
+    {% endif %}
+
+    </div>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const summaryText = document.getElementById('summary').innerText;
+            const blob = new Blob([summaryText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'summary.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Define the generateNotes function
+        document.getElementById("notesBtn").addEventListener("click", function generateNotes() {
+            const summary = document.getElementById("summary").innerText;
+
+            fetch("/display_notes", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ summary }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json(); // Expecting JSON response from server
+                } else {
+                    throw new Error("Failed to generate notes");
+                }
+            })
+            .then(data => {
+                if (data.notes) {
+                    // Store the generated notes in localStorage
+                    localStorage.setItem("generatedNotes", data.notes);
+                    // Redirect to notes.html
+                    window.location.href = "/notes"; // Make sure this is the correct route
+                } else if (data.error) {
+                    alert("Error: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("An error occurred: " + error.message);
+                console.error(error);
+            });
+        });
+
+    
+    </script>
+</body>
+</html>

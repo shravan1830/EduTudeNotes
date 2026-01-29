@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EduTubeNotes - My Summaries</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet"href="{{ url_for('static', filename='css/chatbot.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script>
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput').value;
+            const responseElement = document.getElementById('response');
+            const chatContainer = document.getElementById('chatContainer');
+
+            // Add user's message to chat
+            chatContainer.innerHTML += `<div class="user-message">${messageInput}</div>`;
+            messageInput.value = ""; // Clear input field
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: messageInput }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                // Add bot's response to chat
+                chatContainer.innerHTML += `<div class="bot-message">${data.response}</div>`;
+                chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to bottom
+
+            } catch (error) {
+                console.error('Error:', error);
+                responseElement.textContent = 'An error occurred. Please try again.';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Select all flash message elements
+            const flashes = document.querySelectorAll('.flashes li');
+            flashes.forEach(flash => {
+                // Set a timeout to remove the flash message after 3 seconds (3000 ms)
+                setTimeout(() => {
+                    flash.style.transition = "opacity 0.5s ease"; // Optional: Add transition for smoothness
+                    flash.style.opacity = 0; // Fade out
+                    setTimeout(() => flash.remove(), 500); // Remove element after fade out
+                }, 3000); // Time before dismissal
+            });
+        });
+    </script>
+</head>
+
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flashes">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+    <header class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <img src="static\css/images2.jpeg" class="logo">
+            <a class="navbar-brand" href="#">EduTubeNotes</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_summarizations') }}">My Summaries</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+        <h2 class="mt-5">My Summaries</h2>
+        <div class="content">
+            <div class="summaries-section">
+
+        {% if summarizations %}
+            <ul class="list-group mt-3">
+                {% for summary in summarizations %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('summary', result_id=summary.id) }}">{{ summary.video_title }}</a>  <!-- Show video title -->
+                        <form action="{{ url_for('delete_summary', summary_id=summary.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm delete-btn" onclick="return confirm('Are you sure you want to delete this summary?');">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="mt-3">You have no summaries yet.</p>
+        {% endif %}
+    </div>
+    <div class="chatbot-section">
+        <h1>Ask anything!</h1>
+        <div id="chatContainer" class="chat-container"></div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <pre><p id="response"></p></pre>
+    </div>
+</div>
+</div>
+</body>
+</html>

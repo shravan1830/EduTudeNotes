@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/summary.css') }}">
+    <title>Summary Page</title>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+      
+        <h2 class="mt-5">Your Summary</h2>
+        <div class="card mt-4">
+            <div class="card-body" id="summary">
+                <pre id="summaryOutput"></pre> <!-- This is where the summary will be displayed -->
+            </div>
+        </div>
+    
+        <button id="downloadBtn" class="btn btn-primary mt-3">Download Summary</button>
+        <button id="notesBtn" class="btn btn-secondary mt-3" onclick="generateNotes()">Generate Notes</button>
+        
+    </div>  <!-- This is where the summary will be displayed -->
+
+    <script>
+        // Function to get query parameters
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split('&').forEach(param => {
+                const [key, value] = param.split('=');
+                params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            });
+            return params;
+        }
+
+        // Get the summary from the URL parameters
+        const queryParams = getQueryParams();
+        const summary = queryParams.summary || 'No summary available.';
+
+        // Display the summary
+        document.getElementById('summaryOutput').innerText = summary;
+
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+            const element = document.createElement('a');
+            const file = new Blob([summary], { type: 'text/plain' });
+            element.href = URL.createObjectURL(file);
+            element.download = 'summary.txt';
+            document.body.appendChild(element);
+            element.click();
+        });
+
+        document.getElementById("notesBtn").addEventListener("click", function generateNotes() {
+            const summary = document.getElementById("summary").innerText;
+
+            fetch("/display_notes", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ summary }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json(); // Expecting JSON response from server
+                } else {
+                    throw new Error("Failed to generate notes");
+                }
+            })
+            .then(data => {
+                if (data.notes) {
+                    // Store the generated notes in localStorage
+                    localStorage.setItem("generatedNotes", data.notes);
+                    // Redirect to notes.html
+                    window.location.href = "/notes"; // Make sure this is the correct route
+                } else if (data.error) {
+                    alert("Error: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("An error occurred: " + error.message);
+                console.error(error);
+            });
+        });
+
+    </script>
+</body>
+</html>
